@@ -1,0 +1,256 @@
+---
+title: "ST 553 Final Exam"
+author: "Tyler Thomas"
+date: "April 24, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ape)
+library(ClustOfVar)
+library(factoextra)
+library(ggplot2)
+library(MASS)
+library(car)
+library(MVN)
+
+```
+
+# Problem 1
+<u> Covariance matrix method: </u> <br />
+
+* Pro
+    + If the variables are on the same scale, the magnitude of the variables on this scale will be retained. 
+* Con
+    + From the diagonals of the covariance matrix, the second variable has a lot higher variance than the other variables,
+    so this causes the first principal component to be composed of mostly the second variable. This can also be seen in the
+    magnitude of the eigenvalues. Since the first eigenvector is mostly the second variable, it is several magnitudes larger
+    than all the other eigenvalues.
+
+<u> Correlation matrix method:  </u> <br />
+
+* Pro
+    + Only takes correlation of variables into account, so differences in scale/variance of variables won't cause eigenvalues and    vectors to be dominated by a single variable (or subset of variables). 
+* Con
+    + If the relative variance of the variables is important for the analysis, it will be lost using the correlation matrix method.
+  
+For this data, I would recommend using the correlation matrix method, so the eigenvectors are not dominated by the second variable.
+
+# Problem 2
+
+* Pros
+    + Can be used to reduce the dimensionality. Especially important when there is not a large amount of observations relative to number of predictors.
+    + Absolutely no multicolinearity. PC are all orthogonal.
+
+* Cons
+    + Lose explainability of variable relationship to predicted value in regression results when PC transformations are used.
+    + No guarentee that the PC will be useful when doing regression analysis. They are only based on the covariance/correl of the x's.
+
+# Problem 3
+
+```{r}
+table_9.12 <- read.csv("C:\\Users\\tjthomas7\\Google Drive\\Spring 2019\\553\\Final\\data\\table9.12.csv", header=T)
+
+
+
+```
+
+
+# Problem 4
+
+```{r}
+#scale the data
+std.table_9.12 <- scale(table_9.12)
+d <- dist(std.table_9.12)
+
+H1 <- hclustvar(std.table_9.12)
+clus4 <- cutree(H1, 3)
+plot(as.phylo(H1), cex = 1, tip.color=clus4+1)
+```
+
+
+
+# Problem 5
+
+### Single linkage (nearest neighbor)
+
+```{r}
+d <- as.dist(matrix(c(0,12,5,9,3,12,0,4,6,2,5,4,0,1,7,9,6,1,0,8,3,2,7,8,0), nrow=5))
+
+H2 <- hclust(d, method="single")
+plot(H2, main="Single Linkage")
+```
+
+### Complete Linkage
+
+```{r}
+H3 <- hclust(d, method="complete")
+plot(H3, main="Complete Linkage")
+```
+
+# Problem 6
+
+```{r}
+shrew.data <- as.dist(read.csv("C:\\Users\\tjthomas7\\Google Drive\\Spring 2019\\553\\Final\\data\\shrew.csv", header=F))
+
+par(mfrow=c(2,2))
+H4 <- hclust(shrew.data, method="single")
+clus3 <- cutree(H4, 2)
+plot(as.phylo(H4), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Single Linkage")
+
+H5 <- hclust(shrew.data, method="complete")
+clus3 <- cutree(H5, 3)
+plot(as.phylo(H5), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Complete Linkage")
+
+H6 <- hclust(shrew.data, method="average")
+clus3 <- cutree(H6, 3)
+plot(as.phylo(H6), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Average Linkage")
+
+H7 <- hclust(shrew.data, method="ward.D")
+clus3 <- cutree(H7, 3)
+plot(as.phylo(H7), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="ward.D Linkage")
+par(mfrow=c(1,1))
+```
+
+
+  There appears to be 3 species. 8,9,10 are always linked together, and combined with the other regions at the end. 6,7 appear to be a cluster. They are always connected together, and only in the single linkage is 6 combined with 1,2,3,4,5 before being combined with 7. 1,2,3,4,5 appear to be the third cluster/species. 
+
+
+<br />
+
+The different linkage methods appear to produce fairly consistent results. However, in the single linkage, 6 is combined with 1,2,3,4,5 before 7 is added into the cluster. This causes single linkage to show 2 clusters, while the other methods show 3 distinct species.
+
+
+
+# Problem 7
+
+###Exercise 12.14
+
+#### A
+
+```{r}
+table_11.9 <- read.csv("C:\\Users\\tjthomas7\\Google Drive\\Spring 2019\\553\\Final\\data\\table11.9.csv", header=T)
+
+d <- dist(table_11.9[,-c(1,2)], method = "euclidean")
+head(d)
+fviz_dist(d, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+```
+
+#### B
+
+```{r}
+par(mfrow=c(1,2))
+H1 <- hclust(d, method="single")
+clus3 <- cutree(H1, 3)
+plot(as.phylo(H1), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Single Linkage 2 clusters")
+
+
+
+H2 <- hclust(d, method="complete")
+clus3 <- cutree(H2, 2)
+plot(as.phylo(H2), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Complete Linkage, 2 clusters")
+
+
+clus3 <- cutree(H1, 3)
+plot(as.phylo(H1), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Single Linkage 3 clusters")
+
+
+clus3 <- cutree(H2, 3)
+plot(as.phylo(H2), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Complete Linkage, 3 clusters")
+
+clus3 <- cutree(H1, 4)
+plot(as.phylo(H1), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Single Linkage 4 clusters")
+
+
+clus3 <- cutree(H2, 4)
+plot(as.phylo(H2), cex = 0.6, label.offset = 0.5, tip.color=clus3+1, main="Complete Linkage, 4 clusters")
+```
+
+The clustering procedures give very different results. Complete linkages creates four distinct clusters of cereal types, however single linkage does not do this. Single linkage creates a few small clusters that are clustered together at the end.  
+
+
+###Exercise 12.15
+
+```{r}
+k2 <- kmeans(table_11.9[,-c(1,2)], centers=2, nstart=25)
+fviz_cluster(k2, data = table_11.9[,-c(1,2)], main="Plot of Clusters Over First Two PC")
+
+k3 <- kmeans(table_11.9[,-c(1,2)], centers=3, nstart=25)
+fviz_cluster(k3, data = table_11.9[,-c(1,2)], main="Plot of Clusters Over First Two PC")
+
+k4 <- kmeans(table_11.9[,-c(1,2)], centers=4, nstart=25)
+fviz_cluster(k4, data = table_11.9[,-c(1,2)], main="Plot of Clusters Over First Two PC")
+```
+
+
+
+# Problem 8
+
+
+
+# Problem 9
+
+###Exercise 11.32
+
+#### A
+
+```{r}
+table_11.8 <- read.csv("C:\\Users\\tjthomas7\\Google Drive\\Spring 2019\\553\\Final\\data\\table11.8.csv", header=T)
+
+ggplot(table_11.8, aes(Activity, Antigen, color=Group)) +
+  geom_point(shape = 16, size = 5, alpha=0.8) +
+  theme_minimal()+
+  scale_color_gradient(low = "#32aeff", high = "#f2aeff")
+
+par(mfrow=c(1,2))
+qqPlot(table_11.8$Activity, main="Activity")
+qqPlot(table_11.8$Antigen, main="Antigen")
+
+
+
+```
+
+#### B
+
+```{r}
+lda.equal <- lda(Group ~ Activity + Antigen, data=table_11.8, prior=c(1,1)/2)
+pred.lda <- predict(lda.equal)$class
+table(table_11.8$Group, pred.lda)
+error <- sum
+```
+
+
+11 of the 75 observations are incorrectly classified. There are 8 incorrectly put into group 1, and 3 incorrectly put into group 2. This gives us an error/misclassification rate of 14.65%.
+
+
+
+#### C
+```{r}
+new.obs <- matrix(c(-.112, -0.279,
+                    -.059, -.068,
+                    .064, .012,
+                    -.043, -.052,
+                    -.05, -.098,
+                    -.094, -.113,
+                    -.123, -.143,
+                    -.011, -.037,
+                    -.21, -.09,
+                    -.126, -.019
+                    ),byrow=T, ncol=2)
+colnames(new.obs) <- c("Activity", "Antigen")
+pred <- predict(lda.equal, newdata=as.data.frame(new.obs))
+pred$class
+
+```
+
+All new observations are predicted to be in group 1. 
+
+
+
+#### D
+```{r}
+
+
+```
